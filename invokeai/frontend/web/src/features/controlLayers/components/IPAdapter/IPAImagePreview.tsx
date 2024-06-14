@@ -4,13 +4,11 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import IAIDndImage from 'common/components/IAIDndImage';
 import IAIDndImageIcon from 'common/components/IAIDndImageIcon';
-import { setBoundingBoxDimensions } from 'features/canvas/store/canvasSlice';
 import { heightChanged, widthChanged } from 'features/controlLayers/store/controlLayersSlice';
-import type { ImageWithDims } from 'features/controlLayers/util/controlAdapters';
+import type { ImageWithDims } from 'features/controlLayers/store/types';
 import type { ImageDraggableData, TypesafeDroppableData } from 'features/dnd/types';
 import { calculateNewSize } from 'features/parameters/components/ImageSize/calculateNewSize';
 import { selectOptimalDimension } from 'features/parameters/store/generationSlice';
-import { activeTabNameSelector } from 'features/ui/store/uiSelectors';
 import { memo, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PiArrowCounterClockwiseBold, PiRulerBold } from 'react-icons/pi';
@@ -25,12 +23,11 @@ type Props = {
   postUploadAction: PostUploadAction;
 };
 
-export const IPAdapterImagePreview = memo(
+export const IPAImagePreview = memo(
   ({ image, onChangeImage, ipAdapterId, droppableData, postUploadAction }: Props) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const isConnected = useAppSelector((s) => s.system.isConnected);
-    const activeTabName = useAppSelector(activeTabNameSelector);
     const optimalDimension = useAppSelector(selectOptimalDimension);
     const shift = useShiftModifier();
 
@@ -44,26 +41,20 @@ export const IPAdapterImagePreview = memo(
         return;
       }
 
-      if (activeTabName === 'canvas') {
-        dispatch(
-          setBoundingBoxDimensions({ width: controlImage.width, height: controlImage.height }, optimalDimension)
-        );
+      const options = { updateAspectRatio: true, clamp: true };
+      if (shift) {
+        const { width, height } = controlImage;
+        dispatch(widthChanged({ width, ...options }));
+        dispatch(heightChanged({ height, ...options }));
       } else {
-        const options = { updateAspectRatio: true, clamp: true };
-        if (shift) {
-          const { width, height } = controlImage;
-          dispatch(widthChanged({ width, ...options }));
-          dispatch(heightChanged({ height, ...options }));
-        } else {
-          const { width, height } = calculateNewSize(
-            controlImage.width / controlImage.height,
-            optimalDimension * optimalDimension
-          );
-          dispatch(widthChanged({ width, ...options }));
-          dispatch(heightChanged({ height, ...options }));
-        }
+        const { width, height } = calculateNewSize(
+          controlImage.width / controlImage.height,
+          optimalDimension * optimalDimension
+        );
+        dispatch(widthChanged({ width, ...options }));
+        dispatch(heightChanged({ height, ...options }));
       }
-    }, [controlImage, activeTabName, dispatch, optimalDimension, shift]);
+    }, [controlImage, dispatch, optimalDimension, shift]);
 
     const draggableData = useMemo<ImageDraggableData | undefined>(() => {
       if (controlImage) {
@@ -108,6 +99,6 @@ export const IPAdapterImagePreview = memo(
   }
 );
 
-IPAdapterImagePreview.displayName = 'IPAdapterImagePreview';
+IPAImagePreview.displayName = 'IPAImagePreview';
 
 const setControlImageDimensionsStyleOverrides: SystemStyleObject = { mt: 6 };
