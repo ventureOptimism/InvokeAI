@@ -4,13 +4,11 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import IAIDndImage from 'common/components/IAIDndImage';
 import IAIDndImageIcon from 'common/components/IAIDndImageIcon';
-import { setBoundingBoxDimensions } from 'features/canvas/store/canvasSlice';
 import { heightChanged, widthChanged } from 'features/controlLayers/store/controlLayersSlice';
-import type { ControlNetConfigV2, T2IAdapterConfigV2 } from 'features/controlLayers/util/controlAdapters';
+import type { ControlAdapterData } from 'features/controlLayers/store/types';
 import type { ImageDraggableData, TypesafeDroppableData } from 'features/dnd/types';
 import { calculateNewSize } from 'features/parameters/components/ImageSize/calculateNewSize';
 import { selectOptimalDimension } from 'features/parameters/store/generationSlice';
-import { activeTabNameSelector } from 'features/ui/store/uiSelectors';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PiArrowCounterClockwiseBold, PiFloppyDiskBold, PiRulerBold } from 'react-icons/pi';
@@ -23,7 +21,7 @@ import {
 import type { ImageDTO, PostUploadAction } from 'services/api/types';
 
 type Props = {
-  controlAdapter: ControlNetConfigV2 | T2IAdapterConfigV2;
+  controlAdapter: ControlAdapterData;
   onChangeImage: (imageDTO: ImageDTO | null) => void;
   droppableData: TypesafeDroppableData;
   postUploadAction: PostUploadAction;
@@ -31,7 +29,7 @@ type Props = {
   onErrorLoadingProcessedImage: () => void;
 };
 
-export const ControlAdapterImagePreview = memo(
+export const CAImagePreview = memo(
   ({
     controlAdapter,
     onChangeImage,
@@ -44,7 +42,6 @@ export const ControlAdapterImagePreview = memo(
     const dispatch = useAppDispatch();
     const autoAddBoardId = useAppSelector((s) => s.gallery.autoAddBoardId);
     const isConnected = useAppSelector((s) => s.system.isConnected);
-    const activeTabName = useAppSelector(activeTabNameSelector);
     const optimalDimension = useAppSelector(selectOptimalDimension);
     const shift = useShiftModifier();
 
@@ -89,27 +86,21 @@ export const ControlAdapterImagePreview = memo(
         return;
       }
 
-      if (activeTabName === 'canvas') {
-        dispatch(
-          setBoundingBoxDimensions({ width: controlImage.width, height: controlImage.height }, optimalDimension)
-        );
-      } else {
-        const options = { updateAspectRatio: true, clamp: true };
+      const options = { updateAspectRatio: true, clamp: true };
 
-        if (shift) {
-          const { width, height } = controlImage;
-          dispatch(widthChanged({ width, ...options }));
-          dispatch(heightChanged({ height, ...options }));
-        } else {
-          const { width, height } = calculateNewSize(
-            controlImage.width / controlImage.height,
-            optimalDimension * optimalDimension
-          );
-          dispatch(widthChanged({ width, ...options }));
-          dispatch(heightChanged({ height, ...options }));
-        }
+      if (shift) {
+        const { width, height } = controlImage;
+        dispatch(widthChanged({ width, ...options }));
+        dispatch(heightChanged({ height, ...options }));
+      } else {
+        const { width, height } = calculateNewSize(
+          controlImage.width / controlImage.height,
+          optimalDimension * optimalDimension
+        );
+        dispatch(widthChanged({ width, ...options }));
+        dispatch(heightChanged({ height, ...options }));
       }
-    }, [controlImage, activeTabName, dispatch, optimalDimension, shift]);
+    }, [controlImage, dispatch, optimalDimension, shift]);
 
     const handleMouseEnter = useCallback(() => {
       setIsMouseOverImage(true);
@@ -234,7 +225,7 @@ export const ControlAdapterImagePreview = memo(
   }
 );
 
-ControlAdapterImagePreview.displayName = 'ControlAdapterImagePreview';
+CAImagePreview.displayName = 'CAImagePreview';
 
 const saveControlImageStyleOverrides: SystemStyleObject = { mt: 6 };
 const setControlImageDimensionsStyleOverrides: SystemStyleObject = { mt: 12 };
