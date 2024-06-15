@@ -10,7 +10,7 @@ import {
   iiLayerImageChanged,
   ipAdapterImageChanged,
   regionalGuidanceIPAdapterImageChanged,
-} from 'features/controlLayers/store/controlLayersSlice';
+} from 'features/controlLayers/store/canvasV2Slice';
 import { fieldImageValueChanged } from 'features/nodes/store/nodesSlice';
 import { selectOptimalDimension } from 'features/parameters/store/generationSlice';
 import { toast } from 'features/toast/toast';
