@@ -1,21 +1,12 @@
-import { useAppSelector } from 'app/store/storeHooks';
-import { isStagingSelector } from 'features/canvas/store/canvasSelectors';
 import { useGalleryImages } from 'features/gallery/hooks/useGalleryImages';
 import { useGalleryNavigation } from 'features/gallery/hooks/useGalleryNavigation';
-import { activeTabNameSelector } from 'features/ui/store/uiSelectors';
-import { useMemo } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 /**
  * Registers gallery hotkeys. This hook is a singleton.
  */
 export const useGalleryHotkeys = () => {
-  const activeTabName = useAppSelector(activeTabNameSelector);
-  const isStaging = useAppSelector(isStagingSelector);
-  // block navigation on Unified Canvas tab when staging new images
-  const canNavigateGallery = useMemo(() => {
-    return activeTabName !== 'canvas' || !isStaging;
-  }, [activeTabName, isStaging]);
+  // TODO(psyche): Hotkeys when staging - cannot navigate gallery with arrow keys when staging!
 
   const {
     areMoreImagesAvailable,
@@ -29,17 +20,14 @@ export const useGalleryHotkeys = () => {
   useHotkeys(
     ['left', 'alt+left'],
     (e) => {
-      canNavigateGallery && handleLeftImage(e.altKey);
+      handleLeftImage(e.altKey);
     },
-    [handleLeftImage, canNavigateGallery]
+    [handleLeftImage]
   );
 
   useHotkeys(
     ['right', 'alt+right'],
     (e) => {
-      if (!canNavigateGallery) {
-        return;
-      }
       if (isOnLastImage && areMoreImagesAvailable && !isFetching) {
         handleLoadMoreImages();
         return;
@@ -48,7 +36,7 @@ export const useGalleryHotkeys = () => {
         handleRightImage(e.altKey);
       }
     },
-    [isOnLastImage, areMoreImagesAvailable, handleLoadMoreImages, isFetching, handleRightImage, canNavigateGallery]
+    [isOnLastImage, areMoreImagesAvailable, handleLoadMoreImages, isFetching, handleRightImage]
   );
 
   useHotkeys(
